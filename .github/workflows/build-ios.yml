@@ -19,7 +19,7 @@ jobs:
           xcodebuild -version
           xcodebuild build -project DaoHoangKy.xcodeproj -scheme DaoHoangKy -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/build" ARCHS=arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO PRODUCT_BUNDLE_IDENTIFIER=com.example.DaoHoangKy
           app="$RUNNER_TEMP/build/Build/Products/Release-iphoneos/DaoHoangKy.app"
-          xcrun lipo -verify_arch arm64 "$app/DaoHoangKy"
+          xcrun lipo "$app/DaoHoangKy" -verify_arch arm64
           for file in index.html game.js styles.css; do test -f "$app/Web/$file"; done
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           ditto "$app" "$RUNNER_TEMP/ipa/Payload/DaoHoangKy.app"
