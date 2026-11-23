@@ -1,0 +1,34 @@
+name: Build DaoHoangKy IPA
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          exec > >(tee dist/build.log) 2>&1
+          unzip -q Dao_Hoang_Ky_Source_Prompt.zip -d "$RUNNER_TEMP/source"
+          cd "$RUNNER_TEMP/source/DaoHoangKy_iOS_Source"
+          xcodebuild -version
+          xcodebuild build -project DaoHoangKy.xcodeproj -scheme DaoHoangKy -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/build" ARCHS=arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO PRODUCT_BUNDLE_IDENTIFIER=com.example.DaoHoangKy
+          app="$RUNNER_TEMP/build/Build/Products/Release-iphoneos/DaoHoangKy.app"
+          xcrun lipo -verify_arch arm64 "$app/DaoHoangKy"
+          for file in index.html game.js styles.css; do test -f "$app/Web/$file"; done
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          ditto "$app" "$RUNNER_TEMP/ipa/Payload/DaoHoangKy.app"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/dist/DaoHoangKy-unsigned.ipa" Payload)
+          unzip -tq "$GITHUB_WORKSPACE/dist/DaoHoangKy-unsigned.ipa"
+          shasum -a 256 "$GITHUB_WORKSPACE/dist/DaoHoangKy-unsigned.ipa" | tee "$GITHUB_WORKSPACE/dist/SHA256SUMS.txt"
+      - name: Upload IPA and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaoHoangKy-result
+          path: dist/
